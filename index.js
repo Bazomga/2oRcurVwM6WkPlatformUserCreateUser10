@@ -1,4 +1,3 @@
-
 /**
  * Nome da primitiva : createUser
  * Nome do dominio : platform
@@ -6,35 +5,21 @@
  * Nome do tenant : fabcustom
  **/
 
-const axios = require('axios')
-const obterDados = require('./obterDados')
+const verificaDados = require('./src/verificaDados');
 
 //O hander é o "main", onde gerencia o que irá acontecer
 exports.handler = async (event) => {
+  let descricao;
   let body;
-  let tokenSeniorX = '0'//Token para testes
-  
+  let tokenSeniorX = 'token'; //Token de testes oculto
   if (event.body === undefined) {
-    body = event
+    body = event;
   } else {
-    body = JSON.parse(event.body)  
-    tokenSeniorX = event.headers['X-Senior-Token']
+    body = JSON.parse(event.body);  
+    tokenSeniorX = event.headers['X-Senior-Token']; //header que guarda a chave
   }  
-  
-  //status 200 = ok, status 400 = bad request
-  if (body.hasOwnProperty('description')) {
-    return sendRes(200, body)
-  } else {
-    let dataInfo = new Date()
-    let dataHoje = dataInfo.getDate() + "/" + (dataInfo.getMonth()+1) + "/" + dataInfo.getFullYear()
-    let user = await obterDados.obterDadosUser(tokenSeniorX)
-    if (user.statusCode == 400) {
-      return sendRes(user.statusCode, user.body)
-    }
-    const infoGeral = `Usuário '${body.username}' (${body.fullName}) foi criado em ${dataHoje} por ${user.fullName}`
-    body.description = "Campo preenchido automaticamente via Regra. " + infoGeral + "."
-    return sendRes(200, body);  
-  }
+  descricao = await verificaDados.checkDescricao(body, tokenSeniorX);
+  return sendRes(descricao.statusCode, descricao.body);
 };
 
 const sendRes = (status, body) => {
@@ -45,8 +30,5 @@ const sendRes = (status, body) => {
     },
     body: JSON.stringify(body)
   };
-  delete body.password
-  console.log(body);
-
   return response;
 };
